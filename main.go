@@ -14,8 +14,20 @@ func main() {
 	}
 
 	client.UseDatabase("oi", "oi")
+	client.Set("teste", "123")
+	client.Set("name", "alex fernando")
 
-	fmt.Println(client)
+	teste, err := client.Get("teste")
+	if err != nil {
+		fmt.Println("occurred a error: ", err)
+	}
+
+	name, err := client.Get("name")
+	if err != nil {
+		fmt.Println("occurred a error: ", err)
+	}
+
+	fmt.Println("[teste]: ", teste)
+	fmt.Println("[name]: ", name)
 	select {}
-
 }

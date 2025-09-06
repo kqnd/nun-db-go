@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/nundb/v1/nundb/response"
@@ -17,14 +18,18 @@ type Client struct {
 	responseHandler response.Handler
 	conn            *websocket.Conn
 	watchers        map[string][]func(interface{})
-	pendings        map[string]chan interface{}
+	pendings        []chan interface{}
+	queue           sync.Mutex
 }
 
 func NewClient(serverUrl, username, password string) (*Client, error) {
+	watchers := make(map[string][]func(interface{}))
+	pendings := make([]chan interface{}, 0)
+
 	client := &Client{
 		Username: username,
-		watchers: make(map[string][]func(interface{})),
-		pendings: make(map[string]chan interface{}),
+		watchers: watchers,
+		pendings: pendings,
 	}
 
 	u, err := url.Parse(serverUrl)
@@ -37,6 +42,8 @@ func NewClient(serverUrl, username, password string) (*Client, error) {
 		return nil, err
 	}
 
+	handler := response.CreateHandler(&client.watchers, &client.pendings)
+	client.responseHandler = handler
 	client.conn = conn
 
 	fmt.Println("connected to: ", u.String())
@@ -55,9 +62,19 @@ func (c *Client) listen() {
 			log.Println("conn closed: ", err)
 			return
 		}
-		fmt.Println(msg)
-		// response.Handler(string(msg))
+
+		c.responseHandler.SetPayload(string(msg))
+		c.responseHandler.GettingValues()
+
 	}
+}
+
+func (c *Client) SendCommand(command string) {
+	err := c.conn.WriteMessage(websocket.TextMessage, []byte(command))
+	if err != nil {
+		log.Fatalf("error during command: %s - error: %s", command, err)
+	}
+	fmt.Printf("[command] %s executed\n", command)
 }
 
 func (c *Client) CreateDatabase(name, pwd string) {
@@ -68,10 +85,17 @@ func (c *Client) UseDatabase(name, pwd string) {
 	c.SendCommand(fmt.Sprintf("use-db %s %s", name, pwd))
 }
 
-func (c *Client) SendCommand(command string) {
-	err := c.conn.WriteMessage(websocket.TextMessage, []byte(command))
-	if err != nil {
-		log.Fatalf("error during command: %s - error: %s", command, err)
-	}
-	fmt.Printf("[command] %s executed\n", command)
+func (c *Client) Set(key, value string) {
+	c.SendCommand(fmt.Sprintf("set %s %s", key, value))
+}
+
+func (c *Client) Get(key string) (interface{}, error) {
+	ch := make(chan interface{})
+
+	c.queue.Lock()
+	c.pendings = append(c.pendings, ch)
+	c.queue.Unlock()
+
+	c.SendCommand("get " + key)
+	return <-ch, nil
 }
