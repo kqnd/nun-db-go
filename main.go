@@ -17,6 +17,10 @@ func main() {
 	client.Set("teste", "123")
 	client.Set("name", "alex fernando")
 
+	client.Watch("teste", func(data interface{}) {
+		fmt.Printf("[teste] changed to %s\n", data)
+	})
+
 	teste, err := client.Get("teste")
 	if err != nil {
 		fmt.Println("occurred a error: ", err)
@@ -26,6 +30,12 @@ func main() {
 	if err != nil {
 		fmt.Println("occurred a error: ", err)
 	}
+
+	client.Set("teste", "1")
+	client.Set("teste", "3")
+	client.Set("teste", "2")
+	client.Set("teste", "2")
+	client.Set("teste", "5")
 
 	fmt.Println("[teste]: ", teste)
 	fmt.Println("[name]: ", name)

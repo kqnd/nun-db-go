@@ -45,3 +45,15 @@ func (h *Handler) GettingValues() {
 		*h.pendings = pendings[1:]
 	}
 }
+
+func (h *Handler) WatchingValues() {
+	if h.command == "changed" {
+		key := h.args[0]
+		value := h.args[1]
+		if watchers, ok := (*h.watchers)[key]; ok {
+			for _, cb := range watchers {
+				go cb(value)
+			}
+		}
+	}
+}

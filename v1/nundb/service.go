@@ -65,6 +65,7 @@ func (c *Client) listen() {
 
 		c.responseHandler.SetPayload(string(msg))
 		c.responseHandler.GettingValues()
+		c.responseHandler.WatchingValues()
 
 	}
 }
@@ -87,6 +88,13 @@ func (c *Client) UseDatabase(name, pwd string) {
 
 func (c *Client) Set(key, value string) {
 	c.SendCommand(fmt.Sprintf("set %s %s", key, value))
+}
+
+func (c *Client) Watch(key string, cb func(interface{})) {
+	c.queue.Lock()
+	c.watchers[key] = append(c.watchers[key], cb)
+	c.queue.Unlock()
+	c.SendCommand("watch " + key)
 }
 
 func (c *Client) Get(key string) (interface{}, error) {
