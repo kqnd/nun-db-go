@@ -9,11 +9,11 @@ import (
 )
 
 type Client struct {
-	Name       string
+	Username   string
 	connection *websocket.Conn
 }
 
-func NewClient(serverUrl, name, password string) *Client {
+func NewClient(serverUrl, username, password string) *Client {
 	u, err := url.Parse(serverUrl)
 	if err != nil {
 		log.Fatal("error parsing url: ", err)
@@ -25,10 +25,22 @@ func NewClient(serverUrl, name, password string) *Client {
 	}
 	defer c.Close()
 
-	fmt.Println("connected to: ", u.String())
-
-	return &Client{
-		Name:       name,
+	client := &Client{
+		Username:   username,
 		connection: c,
 	}
+
+	fmt.Println("connected to: ", u.String())
+	authMsg := fmt.Sprintf("auth %s %s", username, password)
+	client.SendCommand(authMsg)
+
+	return client
+}
+
+func (c *Client) SendCommand(command string) {
+	err := c.connection.WriteMessage(websocket.TextMessage, []byte(command))
+	if err != nil {
+		log.Fatalf("error during command: %s - error: %s", command, err)
+	}
+	fmt.Printf("[command] %s executed\n", command)
 }
