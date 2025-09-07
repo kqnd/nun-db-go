@@ -90,6 +90,24 @@ func (c *Client) Set(key, value string) {
 	c.SendCommand(fmt.Sprintf("set %s %s", key, value))
 }
 
+func (c *Client) Increment(key string, value int) {
+	c.SendCommand(fmt.Sprintf("increment %s %d", key, value))
+}
+
+func (c *Client) Remove(key string) {
+	c.SendCommand("remove " + key)
+}
+
+func (c *Client) RemoveAllWatchers() {
+	c.SendCommand("unwatch-all")
+	c.watchers = make(map[string][]func(interface{}))
+}
+
+func (c *Client) RemoveWatcher(key string) {
+	c.SendCommand("unwatch " + key)
+	delete(c.watchers, key)
+}
+
 func (c *Client) Watch(key string, cb func(interface{})) {
 	c.queue.Lock()
 	c.watchers[key] = append(c.watchers[key], cb)
