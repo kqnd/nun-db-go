@@ -94,6 +94,7 @@ func (c *Client) UseDatabase(name, pwd string) {
 	c.SendCommand(fmt.Sprintf("use-db %s %s", name, pwd))
 }
 
+// a asd
 func (c *Client) Set(key string, value interface{}) error {
 	var strValue string
 	switch v := value.(type) {
