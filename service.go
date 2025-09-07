@@ -1,4 +1,4 @@
-package nundbgo
+package main
 
 import (
 	"fmt"
