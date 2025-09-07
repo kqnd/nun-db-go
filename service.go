@@ -1,4 +1,4 @@
-package nundbgo
+package nundb
 
 import (
 	"encoding/json"
@@ -50,7 +50,6 @@ func NewClient(serverUrl, username, password string) (*Client, error) {
 	client.responseHandler = handler
 	client.conn = conn
 
-	fmt.Println("connected to: ", u.String())
 	authMsg := fmt.Sprintf("auth %s %s", username, password)
 	client.SendCommand(authMsg)
 
@@ -67,7 +66,6 @@ func (c *Client) listen() {
 	for {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
-			log.Println("conn closed: ", err)
 			return
 		}
 
@@ -83,7 +81,6 @@ func (c *Client) SendCommand(command string) {
 	if err != nil {
 		log.Fatalf("error during command: %s - error: %s", command, err)
 	}
-	fmt.Printf("[command] %s executed\n", command)
 }
 
 func (c *Client) CreateDatabase(name, pwd string) {
