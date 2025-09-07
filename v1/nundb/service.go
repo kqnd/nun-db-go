@@ -20,6 +20,8 @@ type Client struct {
 	watchers        map[string][]func(interface{})
 	pendings        []chan interface{}
 	queue           sync.Mutex
+
+	strictQueueWatchers bool
 }
 
 func NewClient(serverUrl, username, password string) (*Client, error) {
@@ -27,9 +29,10 @@ func NewClient(serverUrl, username, password string) (*Client, error) {
 	pendings := make([]chan interface{}, 0)
 
 	client := &Client{
-		Username: username,
-		watchers: watchers,
-		pendings: pendings,
+		Username:            username,
+		watchers:            watchers,
+		pendings:            pendings,
+		strictQueueWatchers: false,
 	}
 
 	u, err := url.Parse(serverUrl)
@@ -55,6 +58,10 @@ func NewClient(serverUrl, username, password string) (*Client, error) {
 	return client, nil
 }
 
+func (c *Client) SetWatchersQueueMode(strict bool) {
+	c.strictQueueWatchers = strict
+}
+
 func (c *Client) listen() {
 	for {
 		_, msg, err := c.conn.ReadMessage()
@@ -65,7 +72,7 @@ func (c *Client) listen() {
 
 		c.responseHandler.SetPayload(string(msg))
 		c.responseHandler.GettingValues()
-		c.responseHandler.WatchingValues()
+		c.responseHandler.WatchingValues(c.strictQueueWatchers)
 
 	}
 }

@@ -46,13 +46,17 @@ func (h *Handler) GettingValues() {
 	}
 }
 
-func (h *Handler) WatchingValues() {
+func (h *Handler) WatchingValues(strictQueueWatch bool) {
 	if h.command == "changed" {
 		key := h.args[0]
 		value := h.args[1]
 		if watchers, ok := (*h.watchers)[key]; ok {
 			for _, cb := range watchers {
-				go cb(value)
+				if strictQueueWatch {
+					cb(value)
+				} else {
+					go cb(value)
+				}
 			}
 		}
 	}
