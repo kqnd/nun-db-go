@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	nundb "github.com/viewfromaside/nun-db-go/"
+	nundb "github.com/viewfromaside/nun-db-go"
 )
 
 func main() {
