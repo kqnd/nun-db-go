@@ -1,4 +1,4 @@
-package nundb
+package nundbgo
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/viewfromaside/nun-db-go/v1/nundb/response"
+	"github.com/viewfromaside/nun-db-go/response"
 )
 
 type Client struct {
