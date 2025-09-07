@@ -1,6 +1,7 @@
 package nundbgo
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -93,8 +94,20 @@ func (c *Client) UseDatabase(name, pwd string) {
 	c.SendCommand(fmt.Sprintf("use-db %s %s", name, pwd))
 }
 
-func (c *Client) Set(key, value string) {
-	c.SendCommand(fmt.Sprintf("set %s %s", key, value))
+func (c *Client) Set(key string, value interface{}) error {
+	var strValue string
+	switch v := value.(type) {
+	case string:
+		strValue = v
+	default:
+		jsonBytes, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("error on parsing value to json: %w", err)
+		}
+		strValue = string(jsonBytes)
+	}
+	c.SendCommand(fmt.Sprintf("set %s %s", key, strValue))
+	return nil
 }
 
 func (c *Client) Increment(key string, value int) {
