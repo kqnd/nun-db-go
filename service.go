@@ -143,3 +143,57 @@ func (c *Client) Get(key string) (interface{}, error) {
 	c.SendCommand("get " + key)
 	return <-ch, nil
 }
+
+func (c *Client) GetAllKeys() ([]string, error) {
+	ch := make(chan interface{})
+
+	c.queue.Lock()
+	c.pendings = append(c.pendings, ch)
+	c.queue.Unlock()
+
+	c.SendCommand("keys")
+
+	res := <-ch
+	keys, ok := res.([]string)
+	if !ok {
+		return nil, fmt.Errorf("keys is not a array")
+	}
+
+	return keys, nil
+}
+
+func (c *Client) GetKeysStartingWith(prefix string) (interface{}, error) {
+	ch := make(chan interface{})
+
+	c.queue.Lock()
+	c.pendings = append(c.pendings, ch)
+	c.queue.Unlock()
+
+	c.SendCommand("keys " + prefix)
+
+	res := <-ch
+	keys, ok := res.([]string)
+	if !ok {
+		return nil, fmt.Errorf("keys is not a array")
+	}
+
+	return keys, nil
+}
+
+func (c *Client) GetKeysEndingWith(suffix string) (interface{}, error) {
+	ch := make(chan interface{})
+
+	c.queue.Lock()
+	c.pendings = append(c.pendings, ch)
+	c.queue.Unlock()
+
+	c.SendCommand("keys *" + suffix)
+
+	res := <-ch
+	keys, ok := res.([]string)
+	if !ok {
+		return nil, fmt.Errorf("keys is not a array")
+	}
+
+	return keys, nil
+}
