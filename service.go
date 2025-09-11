@@ -1,4 +1,4 @@
-package nundb
+package main
 
 import (
 	"encoding/json"
@@ -72,6 +72,7 @@ func (c *Client) listen() {
 		c.responseHandler.SetPayload(string(msg))
 		c.responseHandler.GettingValues()
 		c.responseHandler.WatchingValues(c.strictQueueWatchers)
+		c.responseHandler.Keys()
 
 	}
 }

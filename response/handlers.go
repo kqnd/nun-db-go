@@ -1,5 +1,9 @@
 package response
 
+import (
+	"strings"
+)
+
 type Handler struct {
 	command  string
 	args     []string
@@ -59,5 +63,32 @@ func (h *Handler) WatchingValues(strictQueueWatch bool) {
 				}
 			}
 		}
+	}
+}
+
+func hidePrivateKeys(keys []string) []string {
+	newKeys := []string{}
+	for _, key := range keys {
+		if key != "$$token" && key != "$connections" {
+			newKeys = append(newKeys, key)
+		}
+	}
+	return newKeys
+}
+
+func (h *Handler) Keys() {
+	if h.command == "keys" {
+		var keys []string = strings.Split(h.args[0], ",")
+
+		pendings := *h.pendings
+		if len(pendings) == 0 {
+			return
+		}
+
+		ch := (pendings)[0]
+		ch <- hidePrivateKeys(keys)[1:]
+		close(ch)
+
+		*h.pendings = pendings[1:]
 	}
 }
