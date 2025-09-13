@@ -1,10 +1,11 @@
-package nundb
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -69,27 +70,55 @@ func (c *Client) listen() {
 			return
 		}
 
+		c.responseHandler.SetEntireMessage(string(msg))
 		c.responseHandler.SetPayload(string(msg))
 		c.responseHandler.GettingValues()
 		c.responseHandler.WatchingValues(c.strictQueueWatchers)
+		c.responseHandler.AllDatabases()
+		c.responseHandler.NoDBSelected()
+		c.responseHandler.InvalidAuth()
 		c.responseHandler.Keys()
 
 	}
 }
 
-func (c *Client) SendCommand(command string) {
-	err := c.conn.WriteMessage(websocket.TextMessage, []byte(command))
-	if err != nil {
-		log.Fatalf("error during command: %s - error: %s", command, err)
+func (c *Client) verifyConnection() {
+	if c.conn == nil {
+		fmt.Println("no connection established with nundb server")
+		os.Exit(1)
 	}
 }
 
-func (c *Client) CreateDatabase(name, pwd string) {
-	c.SendCommand(fmt.Sprintf("create-db %s %s", name, pwd))
+func (c *Client) SendCommand(command string) error {
+	c.verifyConnection()
+	err := c.conn.WriteMessage(websocket.TextMessage, []byte(command))
+	if err != nil {
+		log.Fatalf("error during command: %s - error: %s", command, err)
+		return err
+	}
+	return nil
 }
 
-func (c *Client) UseDatabase(name, pwd string) {
+func (c *Client) CreateDatabase(name, pwd string) error {
+	if c.Database != "" {
+		dbs, err := c.GetAllDatabases()
+		if err != nil {
+			fmt.Println("error fetching dbs:", err)
+			return err
+		}
+		for _, db := range dbs {
+			if db == name {
+				return nil
+			}
+		}
+	}
+	c.SendCommand(fmt.Sprintf("create-db %s %s", name, pwd))
+	return nil
+}
+
+func (c *Client) UseDatabase(name, pwd string) error {
 	c.SendCommand(fmt.Sprintf("use-db %s %s", name, pwd))
+	return nil
 }
 
 // a asd
@@ -113,25 +142,29 @@ func (c *Client) Increment(key string, value int) {
 	c.SendCommand(fmt.Sprintf("increment %s %d", key, value))
 }
 
-func (c *Client) Remove(key string) {
+func (c *Client) Remove(key string) error {
 	c.SendCommand("remove " + key)
+	return nil
 }
 
-func (c *Client) RemoveAllWatchers() {
+func (c *Client) RemoveAllWatchers() error {
 	c.SendCommand("unwatch-all")
 	c.watchers = make(map[string][]func(interface{}))
+	return nil
 }
 
-func (c *Client) RemoveWatcher(key string) {
+func (c *Client) RemoveWatcher(key string) error {
 	c.SendCommand("unwatch " + key)
 	delete(c.watchers, key)
+	return nil
 }
 
-func (c *Client) Watch(key string, cb func(interface{})) {
+func (c *Client) Watch(key string, cb func(interface{})) error {
 	c.queue.Lock()
 	c.watchers[key] = append(c.watchers[key], cb)
 	c.queue.Unlock()
 	c.SendCommand("watch " + key)
+	return nil
 }
 
 func (c *Client) Get(key string) (interface{}, error) {
@@ -143,6 +176,23 @@ func (c *Client) Get(key string) (interface{}, error) {
 
 	c.SendCommand("get " + key)
 	return <-ch, nil
+}
+
+func (c *Client) GetAllDatabases() ([]string, error) {
+	ch := make(chan interface{})
+
+	c.queue.Lock()
+	c.pendings = append(c.pendings, ch)
+	c.queue.Unlock()
+
+	c.SendCommand("debug list-dbs")
+
+	res := <-ch
+	dbs, ok := res.([]string)
+	if !ok {
+		return nil, fmt.Errorf("dbs is not a array")
+	}
+	return dbs, nil
 }
 
 func (c *Client) GetAllKeys() ([]string, error) {

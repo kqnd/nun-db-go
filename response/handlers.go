@@ -1,14 +1,17 @@
 package response
 
 import (
+	"fmt"
+	"os"
 	"strings"
 )
 
 type Handler struct {
-	command  string
-	args     []string
-	watchers *map[string][]func(interface{})
-	pendings *[]chan interface{}
+	command       string
+	args          []string
+	entireMessage string
+	watchers      *map[string][]func(interface{})
+	pendings      *[]chan interface{}
 }
 
 func CreateHandler(watchers *map[string][]func(interface{}), pendings *[]chan interface{}) Handler {
@@ -30,6 +33,42 @@ func (h *Handler) SetPayload(response string) {
 		h.args = args[1:]
 	} else {
 		h.args = nil
+	}
+}
+
+func (h *Handler) SetEntireMessage(message string) {
+	h.entireMessage = message
+}
+
+func (h *Handler) NoDBSelected() {
+	if strings.Contains(h.entireMessage, "no-db-selected") {
+		fmt.Println("no database selected nundb")
+		os.Exit(1)
+	}
+}
+
+func (h *Handler) InvalidAuth() {
+	if strings.Contains(h.entireMessage, "invalid auth") {
+		fmt.Println("invalid auth nundb")
+		os.Exit(1)
+	}
+}
+
+func (h *Handler) AllDatabases() {
+	if h.command == "dbs-list" {
+		var dbs []string = strings.Split(strings.ReplaceAll(h.args[0], " ", ""), ",")
+
+		pendings := *h.pendings
+		if len(pendings) == 0 {
+			return
+		}
+
+		ch := (pendings)[0]
+		ch <- dbs
+
+		close(ch)
+
+		*h.pendings = pendings[1:]
 	}
 }
 
