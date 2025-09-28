@@ -1,4 +1,4 @@
-module github.com/viewfromaside/nun-db-go
+module github.com/kqnd/nun-db-go
 
 go 1.21
 

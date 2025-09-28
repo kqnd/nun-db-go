@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/viewfromaside/nun-db-go/response"
+	"github.com/kqnd/nun-db-go/response"
 )
 
 type Client struct {
