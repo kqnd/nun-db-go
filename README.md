@@ -13,7 +13,7 @@ server.
 ## Installation
 
 ``` bash
-go get github.com/kqnd/nun-db-go
+go get github.com/kqnd/nun-db-go@v0.1.2
 ```
 
 ------------------------------------------------------------------------
@@ -25,7 +25,7 @@ package main
 
 import (
     "fmt"
-    "github.com/kqnd/nun-db-go/nundb"
+    nundb "github.com/kqnd/nun-db-go"
 )
 
 func main() {
