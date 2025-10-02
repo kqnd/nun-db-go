@@ -97,7 +97,7 @@ fmt.Println(keys)
 // Get keys starting with "user:"
 keys, _ := client.GetKeysStartingWith("user:")
 
-// Get keys ending with ":id"
+// Get keys ending with ":id'
 keys, _ := client.GetKeysEndingWith(":id")
 ```
 
